@@ -1,0 +1,58 @@
+
+ name: CI — Bella Tavola
+
+ on:
+   push:
+     branches: [main]
+   pull_request:
+     branches: [main]
+
+ jobs:
+   verificar-sintaxe:
+     runs-on: ubuntu-latest
+
+     steps:
+       - name: Baixar o código
+         uses: actions/checkout@v4
+
+       - name: Configurar Python
+         uses: actions/setup-python@v5
+         with:
+           python-version: "3.11"
+
+       - name: Instalar ferramentas de qualidade
+         run: pip install autoflake black
+          Prefira adicionar autoflake e black ao requirements.txt
+          para garantir que o mesmo ambiente é usado localmente e no CI.
+
+       - name: Verificar imports não utilizados
+         run: autoflake --check --remove-all-unused-imports -r .
+
+       - name: Verificar formatação
+         run: black --check .
+
+   verificar-api:
+     runs-on: ubuntu-latest
+     needs: verificar-sintaxe    
+
+     steps:
+       - name: Baixar o código
+         uses: actions/checkout@v4
+
+       - name: Configurar Python
+         uses: actions/setup-python@v5
+         with:
+           python-version: "3.11"
+
+       - name: Instalar dependências
+         run: |
+           pip install --upgrade pip
+           pip install -r requirements.txt
+
+       - name: Iniciar a API em background
+         run: |
+           uvicorn main:app &
+           sleep 3
+
+       - name: Verificar que a API responde
+         run: curl --fail https://curly-space-goggles-wrvj96g755r437gg-8000.app.github.dev/
